@@ -10,7 +10,7 @@ replicaCount: 1
 #   # Overrides the image tag whose default is the chart appVersion.
 #   tag: latest
 image:
-  repository: ghcr.io/nikolaidstepanov/architecture-sprint-3
+  repository: ghcr.io/nikolaidstepanov/tmp-sprint-3
   tag: latest
 
 imagePullSecrets: []
