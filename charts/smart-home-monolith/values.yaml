@@ -4,10 +4,13 @@
 
 replicaCount: 1
 
+# image:
+#   repository: ghcr.io/yandex-practicum/architecture-sprint-3
+#   pullPolicy: IfNotPresent
+#   # Overrides the image tag whose default is the chart appVersion.
+#   tag: latest
 image:
-  repository: ghcr.io/yandex-practicum/architecture-sprint-3
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  repository: ghcr.io/nikolaidstepanov/architecture-sprint-3
   tag: latest
 
 imagePullSecrets: []

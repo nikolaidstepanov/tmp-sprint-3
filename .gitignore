@@ -192,3 +192,6 @@ build/
 
 tmp/
 task-*
+
+.env
+*.lock.hcl
