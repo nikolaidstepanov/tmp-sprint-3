@@ -195,3 +195,5 @@ task-*
 
 .env
 *.lock.hcl
+
+docs/*.bkp
