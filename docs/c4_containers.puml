@@ -1,0 +1,51 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container diagram for "Теплый дом"
+
+Person(user, "Пользователь", "Пользователь системы 'Теплый дом'")
+Person(device_manufacturer, "Производитель устройств", "Компания или человек, решивший подключить устройство на нашу платформу")
+
+System_Boundary(HomeSystem, "Теплый дом") {
+    Container(web_app, "Web Application", "Software System", "Интерфейс пользователя для подключения, настройки и управления функционалом системы")
+    Container(api_gateway, "API Gateway", "Nginx", "Модуль, управляющий запросами от клиентов. Отвечает за аутентификацию и маршрутизацию")
+    Container(personal_account, "Личный кабинет", "Java", "Отвечает за регистрацию пользователей, изменение персональных данных и просмотр доступных устройств")
+    Container(control_module, "Мониторинг и аналитика", "Java", "Сбор данных с датчиков и предоставление аналитики для пользователей")
+    Container(device_management, "Управление устройствами", "Java", "Добавление новых и управление уже установленными устройствами")
+    Container(new_device_integration, "Сервис интеграции новых устройств", "Java", "Добавление или обновление устройств производителей")
+    Container(notification_service, "Сервис уведомлений", "Java", "Уведомления о состоянии устройств, температуре и тревогах")
+    ContainerDb(user_database, "Database", "Postgres 17", "Хранит информацию о пользователях и их устройствах")
+    ContainerDb(device_database, "Database", "MongoDB", "Хранит данные о конфигурации устройств")
+    ContainerDb(telemetry_database, "Databases", "CQRS", "Хранит данные телеметрии с устройств")
+    Container(data_bus, "Шина данных", "RabbitMQ", "Передает информацию обо всех изменениях устройств")
+    Container(sensor_bus, "Шина данных", "Apache Kafka", "Передача телеметрии с датчиков")
+    Container(configuration_storage, "Database", "S3 bucket", "Хранит конфигурационные файлы устройств")
+}
+
+System_Ext(sensor, "Датчик", "Software System", "Устройство, установленное у пользователя, через которое происходит регулирование температуры и сбор данных")
+System_Ext(notification_system, "Notifications", "External Software System", "Внешняя система для отправки уведомлений пользователям")
+
+Rel(user, web_app, "Взаимодействует через", "HTTPS")
+Rel(device_manufacturer, api_gateway, "Подключает устройства через API")
+Rel(web_app, api_gateway, "Направляет запросы", "HTTPS")
+Rel(api_gateway, personal_account, "Передает данные пользователей", "JSON/HTTP")
+Rel(personal_account, user_database, "Хранит данные о пользователях")
+Rel(api_gateway, control_module, "Передает запросы", "JSON/HTTP")
+Rel(control_module, telemetry_database, "Передает телеметрию")
+Rel(control_module, sensor_bus, "Обменивается данными", "Kafka")
+Rel(sensor, control_module, "Передает данные", "JSON/HTTP")
+Rel(api_gateway, device_management, "Передает управление устройствами")
+Rel(device_management, sensor, "Настраивает устройство", "gRPC")
+Rel(device_management, new_device_integration, "Сохраняет информацию о новых устройствах")
+Rel(new_device_integration, device_database, "Хранит конфигурацию")
+Rel(device_management, data_bus, "Передает события изменений")
+Rel(data_bus, telemetry_database, "Передает данные телеметрии")
+Rel(control_module, notification_service, "Передает данные об изменениях")
+Rel(notification_service, notification_system, "Отправляет уведомления", "JSON/HTTP")
+Rel(sensor_bus, telemetry_database, "Хранит данные телеметрии")
+Rel(new_device_integration, configuration_storage, "Сохраняет конфигурационные файлы")
+Rel(configuration_storage, sensor, "Получает файлы конфигурации")
+
+@enduml
