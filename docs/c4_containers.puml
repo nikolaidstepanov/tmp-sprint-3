@@ -1,51 +1,92 @@
 @startuml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
 LAYOUT_WITH_LEGEND()
 
-title Container diagram for "Теплый дом"
+title Smart Home System Components
 
-Person(user, "Пользователь", "Пользователь системы 'Теплый дом'")
-Person(device_manufacturer, "Производитель устройств", "Компания или человек, решивший подключить устройство на нашу платформу")
+' Persons
+Person(user, "User", "Interacts with the Smart Home system to manage devices, monitor data, and configure scenarios.")
+Person_Ext(user_device_producer, "Device Producer", "A company or individual providing new devices and integrating them into the Smart Home ecosystem.")
 
-System_Boundary(HomeSystem, "Теплый дом") {
-    Container(web_app, "Web Application", "Software System", "Интерфейс пользователя для подключения, настройки и управления функционалом системы")
-    Container(api_gateway, "API Gateway", "Nginx", "Модуль, управляющий запросами от клиентов. Отвечает за аутентификацию и маршрутизацию")
-    Container(personal_account, "Личный кабинет", "Java", "Отвечает за регистрацию пользователей, изменение персональных данных и просмотр доступных устройств")
-    Container(control_module, "Мониторинг и аналитика", "Java", "Сбор данных с датчиков и предоставление аналитики для пользователей")
-    Container(device_management, "Управление устройствами", "Java", "Добавление новых и управление уже установленными устройствами")
-    Container(new_device_integration, "Сервис интеграции новых устройств", "Java", "Добавление или обновление устройств производителей")
-    Container(notification_service, "Сервис уведомлений", "Java", "Уведомления о состоянии устройств, температуре и тревогах")
-    ContainerDb(user_database, "Database", "Postgres 17", "Хранит информацию о пользователях и их устройствах")
-    ContainerDb(device_database, "Database", "MongoDB", "Хранит данные о конфигурации устройств")
-    ContainerDb(telemetry_database, "Databases", "CQRS", "Хранит данные телеметрии с устройств")
-    Container(data_bus, "Шина данных", "RabbitMQ", "Передает информацию обо всех изменениях устройств")
-    Container(sensor_bus, "Шина данных", "Apache Kafka", "Передача телеметрии с датчиков")
-    Container(configuration_storage, "Database", "S3 bucket", "Хранит конфигурационные файлы устройств")
+' External Systems
+System_Ext(web_application, "Web Application", "Software System", "Provides an interface for users to connect, configure, and manage the Smart Home system.")
+System_Ext(external_notification_system, "Notifications", "Software System", "External system for sending notifications to users.")
+System_Ext(device_producer_system, "Device Producer System", "Software System", "API used by device producers for integrating and updating devices.")
+System_Ext(device, "Device", "Software System", "A user-owned device integrated into the Smart Home ecosystem.")
+
+
+Container_Boundary(smart_home_system, "Smart Home System") {
+    ' Containers
+    Container(api_gateway, "API Gateway", "Container: Nginx", "Handles user authentication and authorization, load balancing across microservices, request rate limiting, and routing logic for incoming requests.")
+    Container(device_control, "Device Control & Integration", "Container: Java", "Manages devices through a user interface. Handles adding/updating/removing user devices.")
+    Container(monitoring_analytics, "Monitoring and Analytics", "Container: Java", "Responsible for collecting data from devices and providing analytics to users.")
+    Container(notification_service, "Notification Service", "Container: Java", "Handles user notifications about device state changes, temperature, and triggered alarms.")
+    Container(new_device_service, "New Device Integration Service", "Container: Java", "Handles requests for adding new devices by producers.")
+    Container(telemetry_collector, "Telemetry", "Container: Java", "Collects metrics from devices supporting HTTP/gRPC protocols and reads telemetry data from the MQTT/CoAP data bus.")
+    Container(user_dashboard, "User Portal", "Container: Java", "Handles user registration, updating personal data, and viewing available devices.")
+
+    ' Databases
+    ContainerDb(config_database, "Configuration Database", "Container: S3 Bucket", "Stores configuration files for various devices.")
+    ContainerDb(device_metadata_database, "Device Metadata Database", "Container: MongoDB", "Stores metadata about devices available for integration.")
+    ContainerDb(user_logs_database, "User Logs Database", "Container: Clickhouse", "Stores logs of user activities and system changes.")
+    ContainerDb(telemetry_db, "Analytics Database", "Container: Clickhouse", "Stores telemetry information from various user devices for online monitoring and analytics.")
+    ContainerDb(user_database, "User Database", "Container: Postgres 17", "Stores information about users and their devices.")
+
+    ' Data Buses
+    ContainerQueue(integration_data_bus, "Integration Data Bus", "Container: Apache Kafka", "Handles requests for adding/updating/removing user devices.")
+    ContainerQueue(notification_data_bus, "Notification Data Bus", "Container: Apache Kafka", "Handles notification messages for users.")
+    ContainerQueue(logging_data_bus, "Logging Data Bus", "Container: Apache Kafka", "Stores logs of system and user interactions.")
+    ContainerQueue(data_bus_telemetry, "Data Bus (Telemetry)", "Container: Apache Kafka", "Stores telemetry data from user devices and routes it to the appropriate services.")
+    ContainerQueue(mqtt_data_bus, "Data Bus (MQTT/CoAP)", "Container: MQTT/CoAP", "Acts as a bridge between devices and the company's Kafka for telemetry data. This additional layer is needed as not all devices can run a Kafka client.")
+    ContainerQueue(analytics_data_bus, "Analytics Data Bus", "Container: Apache Kafka", "Handles user requests for analytics and routes them to the appropriate components.")
 }
 
-System_Ext(sensor, "Датчик", "Software System", "Устройство, установленное у пользователя, через которое происходит регулирование температуры и сбор данных")
-System_Ext(notification_system, "Notifications", "External Software System", "Внешняя система для отправки уведомлений пользователям")
+Rel(user, web_application, "Uses")
+Rel(user_device_producer, device_producer_system, "Provides devices for integration")
+Rel(device_producer_system, api_gateway, "Routes requests to Smart Home system")
+Rel(web_application, api_gateway, "Routes user requests to internal services")
 
-Rel(user, web_app, "Взаимодействует через", "HTTPS")
-Rel(device_manufacturer, api_gateway, "Подключает устройства через API")
-Rel(web_app, api_gateway, "Направляет запросы", "HTTPS")
-Rel(api_gateway, personal_account, "Передает данные пользователей", "JSON/HTTP")
-Rel(personal_account, user_database, "Хранит данные о пользователях")
-Rel(api_gateway, control_module, "Передает запросы", "JSON/HTTP")
-Rel(control_module, telemetry_database, "Передает телеметрию")
-Rel(control_module, sensor_bus, "Обменивается данными", "Kafka")
-Rel(sensor, control_module, "Передает данные", "JSON/HTTP")
-Rel(api_gateway, device_management, "Передает управление устройствами")
-Rel(device_management, sensor, "Настраивает устройство", "gRPC")
-Rel(device_management, new_device_integration, "Сохраняет информацию о новых устройствах")
-Rel(new_device_integration, device_database, "Хранит конфигурацию")
-Rel(device_management, data_bus, "Передает события изменений")
-Rel(data_bus, telemetry_database, "Передает данные телеметрии")
-Rel(control_module, notification_service, "Передает данные об изменениях")
-Rel(notification_service, notification_system, "Отправляет уведомления", "JSON/HTTP")
-Rel(sensor_bus, telemetry_database, "Хранит данные телеметрии")
-Rel(new_device_integration, configuration_storage, "Сохраняет конфигурационные файлы")
-Rel(configuration_storage, sensor, "Получает файлы конфигурации")
+Rel(external_notification_system, user, "Sends notifications to the user")
+Rel(external_notification_system, user_device_producer, "Sends notifications to device producers")
+
+Rel(notification_data_bus, notification_service, "Handles notification messages for users")
+Rel(notification_service, external_notification_system, "Sends notifications to the external system")
+
+Rel(api_gateway, analytics_data_bus, "Routes analytics requests from users", "pub/sub")
+Rel(api_gateway, user_dashboard, "Handles user registration, updates, and viewing devices", "gRPC")
+Rel(api_gateway, device_control, "Manages requests for device control and integration", "gRPC")
+Rel(api_gateway, new_device_service, "Routes requests for device integration from producers", "gRPC")
+Rel(api_gateway, integration_data_bus, "Routes requests for adding/updating/removing user devices", "pub/sub")
+
+Rel(user_dashboard, user_database, "Stores and retrieves user and device data", "gRPC")
+Rel(analytics_data_bus, monitoring_analytics, "Publishes analytics requests", "pub/sub")
+Rel(monitoring_analytics, telemetry_db, "Reads and writes telemetry and analytics data", "gRPC")
+Rel(user, monitoring_analytics, "Interacts with analytics and monitoring features", "web/socket")
+
+Rel(new_device_service, config_database, "Stores/retrieves configuration files", "gRPC")
+Rel(new_device_service, device_metadata_database, "Stores/retrieves device metadata", "gRPC")
+Rel(device_control, logging_data_bus, "Publishes system and user action logs", "pub/sub")
+Rel(logging_data_bus, user_logs_database, "Stores logs of user activities and system changes", "pub/sub")
+
+Rel(device_control, user_dashboard, "Manages user device data and interactions", "gRPC")
+Rel(device_control, monitoring_analytics, "Retrieves and updates analytics and monitoring data", "gRPC")
+Rel(device_control, new_device_service, "Integrates new devices", "gRPC")
+Rel(device_control, device, "Interacts with user-owned devices")
+
+Rel(integration_data_bus, device_control, "Processes device addition/update/removal requests", "Pub/Sub")
+
+Rel(api_gateway, notification_data_bus, "Sends notification-related requests", "Pub/Sub")
+Rel(device_control, notification_data_bus, "Sends device state change notifications", "Pub/Sub")
+Rel(monitoring_analytics, notification_data_bus, "Sends analytics and monitoring alerts", "Pub/Sub")
+Rel(new_device_service, notification_data_bus, "Sends device integration notifications", "Pub/Sub")
+Rel(user_dashboard, notification_data_bus, "Sends user-specific notifications", "Pub/Sub")
+
+Rel(device, mqtt_data_bus, "Sends telemetry data via MQTT/CoAP", "MQTT/CoAP")
+Rel(mqtt_data_bus, telemetry_collector, "Forwards telemetry data", "Pub/Sub")
+Rel(device, telemetry_collector, "Sends telemetry data via HTTP/gRPC", "HTTP/gRPC")
+
+Rel(telemetry_collector, data_bus_telemetry, "Forwards telemetry data", "Pub/Sub")
+Rel(data_bus_telemetry, telemetry_db, "Stores telemetry data", "Pub/Sub")
 
 @enduml
