@@ -11,7 +11,6 @@ entity User {
   Name : String
   Email : String
   RoleId : Integer
-  HomeId : Integer
   ScenarioId : Integer
   ReportId : Integer
 }
@@ -27,7 +26,15 @@ entity Home {
   * HomeId : Integer
   ---
   Address : String
+}
+
+entity UserHome {
+  * UserHomeId : Integer
+  ---
   UserId : Integer
+  HomeId : Integer
+  OwnershipType : String
+  AccessLevel : String
 }
 
 entity Device {
@@ -114,7 +121,6 @@ entity ActionMapping {
 
 ' Relationships
 User ||--|| Role : "RoleId"
-User ||--o{ Home : "UserId"
 User ||--o{ Scenario : "UserId"
 User ||--o{ Report : "UserId"
 User ||--o{ UserLog : "UserId"
@@ -128,5 +134,7 @@ Producer ||--o{ IntegrationLog : "ProducerId"
 Device ||--o{ IntegrationLog : "DeviceId"
 Report ||--|| Stats : "StatsId"
 UserLog ||--|| ActionMapping : "ActionId"
+User ||--o{ UserHome : "UserId"
+Home ||--o{ UserHome : "HomeId"
 
 @enduml
