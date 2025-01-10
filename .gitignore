@@ -192,3 +192,8 @@ build/
 
 tmp/
 task-*
+
+.env
+*.lock.hcl
+
+docs/*.bkp
